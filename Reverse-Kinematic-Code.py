@@ -2,8 +2,13 @@ import sys
 import math
 import tkinter as tk
 import threading
+import traceback
 
-from DynamixelProtocol1AXorMXseries_ReubenPython3Class import *
+sys.path.append("C:/Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
+#sys.path.append('../')
+
+import DynamixelProtocol1AXorMXseries_ReubenPython3Class
+
 
 FIRST_ARM_LENGTH = 118.5
 SECOND_ARM_LENGTH = 100
@@ -97,6 +102,7 @@ def Display_GUI():
 	y_entry.pack()
 
 	start_btn = tk.Button(window, text="Move!", command=onclick)
+	start_btn.pack()
 
 	current_x_label = tk.Label(window, text="Current x-val: -")
 	current_x_label.pack()
@@ -117,35 +123,34 @@ if __name__ == "__main__":
 
 
 	global DynamixelProtocol1AXorMXseries_setup_dict
-    DynamixelProtocol1AXorMXseries_setup_dict = dict([("GUIparametersDict", DynamixelProtocol1AXorMXseries_GUIparametersDict),
-                                                    ("DesiredSerialNumber_USBtoSerialConverter", "FT3M9STOA"),  #Sangeet = FT3M9STOA
-                                                    ("NameToDisplay_UserSet", "My U2D2"),
-                                                    ("SerialBaudRate", 1000000),
-                                                    ("SerialTxBufferSize", 64),
-                                                    ("SerialRxBufferSize", 64),
-                                                    ("GlobalPrintByteSequencesDebuggingFlag", 0),  #INPORTANT FOR DEBUGGING
-                                                    ("ENABLE_SETS", 1),
-                                                    ("ENABLE_GETS", 1),
-                                                    ("AskForInfrequentDataReadLoopCounterLimit", 200),
-                                                    ("MainThread_TimeToSleepEachLoop", 0.010),
-                                                    ("MotorType_StringList", ["AX", "AX"]), #AX, MX
-                                                    ("Position_DynamixelUnits_Min_UserSet", [0.0, 0.0]),
-                                                    ("Position_DynamixelUnits_Max_UserSet", [1023.0, 1023.0]), #1023 for AX-series, 4095 for MX-series
-                                                    ("Position_DynamixelUnits_StartingValueList", [0.0, 0.0]),
-                                                    ("Speed_DynamixelUnits_Min_UserSet", [-1023.0, -1023.0]),
-                                                    ("Speed_DynamixelUnits_Max_UserSet", [1023.0, 1023.0]),
-                                                    ("Speed_DynamixelUnits_StartingValueList", [1023.0, 1023.0]),
-                                                    ("MaxTorque_DynamixelUnits_StartingValueList", [1023.0, 1023.0])])
-                                                    #("CWlimit_StartingValueList",  [0.0, 0.0]),
-                                                    #("CCWlimit_StartingValueList",  [1023.0, 1023.0])])
+	DynamixelProtocol1AXorMXseries_setup_dict = dict([("DesiredSerialNumber_USBtoSerialConverter", "FT3M9STOA"),  #Sangeet = FT3M9STOA
+													("NameToDisplay_UserSet", "My U2D2"),
+													("SerialBaudRate", 1000000),
+													("SerialTxBufferSize", 64),
+													("SerialRxBufferSize", 64),
+													("GlobalPrintByteSequencesDebuggingFlag", 0),  #INPORTANT FOR DEBUGGING
+													("ENABLE_SETS", 1),
+													("ENABLE_GETS", 1),
+													("AskForInfrequentDataReadLoopCounterLimit", 200),
+													("MainThread_TimeToSleepEachLoop", 0.010),
+													("MotorType_StringList", ["AX", "AX"]), #AX, MX
+													("Position_DynamixelUnits_Min_UserSet", [0.0, 0.0]),
+													("Position_DynamixelUnits_Max_UserSet", [1023.0, 1023.0]), #1023 for AX-series, 4095 for MX-series
+													("Position_DynamixelUnits_StartingValueList", [0.0, 0.0]),
+													("Speed_DynamixelUnits_Min_UserSet", [-1023.0, -1023.0]),
+													("Speed_DynamixelUnits_Max_UserSet", [1023.0, 1023.0]),
+													("Speed_DynamixelUnits_StartingValueList", [1023.0, 1023.0]),
+													("MaxTorque_DynamixelUnits_StartingValueList", [1023.0, 1023.0])])
+													#("CWlimit_StartingValueList",  [0.0, 0.0]),
+													#("CCWlimit_StartingValueList",  [1023.0, 1023.0])])
 
-    try:
-	    DynamixelProtocol1AXorMXseries_Object = DynamixelProtocol1AXorMXseries_ReubenPython3Class(DynamixelProtocol1AXorMXseries_setup_dict)
+	try:
+		DynamixelProtocol1AXorMXseries_Object = DynamixelProtocol1AXorMXseries_ReubenPython3Class(DynamixelProtocol1AXorMXseries_setup_dict)
 
 	except:
-        exceptions = sys.exc_info()[0]
-        print("DynamixelProtocol1AXorMXseries_Object __init__: Exceptions: %s" % exceptions)
-        traceback.print_exc()
+		exceptions = sys.exc_info()[0]
+		print("DynamixelProtocol1AXorMXseries_Object __init__: Exceptions: %s" % exceptions)
+		traceback.print_exc()
 
 	display_gui_thread = threading.Thread(target=Display_GUI)
 	display_gui_thread.start()
