@@ -3,15 +3,19 @@ import math
 import tkinter as tk
 import threading
 import traceback
+from tkinter import ttk
+import time
 
-sys.path.append("C:/Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
+sys.path.append("C://Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
 #sys.path.append('../')
 
-import DynamixelProtocol1AXorMXseries_ReubenPython3Class
+from DynamixelProtocol1AXorMXseries_ReubenPython3Class import DynamixelProtocol1AXorMXseries_ReubenPython3Class
 
 
 FIRST_ARM_LENGTH = 118.5
 SECOND_ARM_LENGTH = 100
+
+DYNAMIXEL_OBJ_SUCCESSFULLY_CREATED = False
 
 moving_in_progress = False
 
@@ -32,9 +36,9 @@ def move_motor(x, y):
 	global DynamixelProtocol1AXorMXseries_Object
 
 	#Calculate each angle
-	hypotenuse = math.sqrt(x^2 + y^2)
+	hypotenuse = math.sqrt(pow(x, 2) + pow(y, 2))
 	angle_a = math.atan(y/x)
-	angle_b = math.acos(((hypotenuse^2) + (FIRST_ARM_LENGTH^2) - (SECOND_ARM_LENGTH^2))/(2*hypotenuse*FIRST_ARM_LENGTH))
+	angle_b = math.acos(((pow(hypotenuse,2)) + (pow(FIRST_ARM_LENGTH,2)) - (pow(SECOND_ARM_LENGTH,2)))/(2*hypotenuse*FIRST_ARM_LENGTH))
 
 	angle_first_motor = angle_a - angle_b # Assume that we are starting from the right most, 0 angle.
 
@@ -57,17 +61,19 @@ def Update_GUI():
 	global current_x_label
 	global current_y_label
 	global DynamixelProtocol1AXorMXseries_Object
+	global DYNAMIXEL_OBJ_SUCCESSFULLY_CREATED
 
-	curr_first_motor_angle = DynamixelProtocol1AXorMXseries_Object.GetMostRecentDataDict()["PositionReceived_Degrees"][0]
-	curr_second_motor_angle = DynamixelProtocol1AXorMXseries_Object.GetMostRecentDataDict()["PositionReceived_Degrees"][1]
+	if(DYNAMIXEL_OBJ_SUCCESSFULLY_CREATED):
+		curr_first_motor_angle = DynamixelProtocol1AXorMXseries_Object.GetMostRecentDataDict()["PositionReceived_Degrees"][0]
+		curr_second_motor_angle = DynamixelProtocol1AXorMXseries_Object.GetMostRecentDataDict()["PositionReceived_Degrees"][1]
 
 
-	# Use Forward Kinematics to determine the x,y position based on the angles the motors are providing
-	x = math.cos(curr_first_motor_angle) + math.cos(curr_second_motor_angle)
-	y = math.sin(curr_first_motor_angle) + math.cos(curr_second_motor_angle)
+		# Use Forward Kinematics to determine the x,y position based on the angles the motors are providing
+		x = math.cos(curr_first_motor_angle) + math.cos(curr_second_motor_angle)
+		y = math.sin(curr_first_motor_angle) + math.cos(curr_second_motor_angle)
 
-	current_x_label.config(text="Current x-val: " + str(x))
-	current_y_label.config(text="Current y-val: " + str(y))
+		current_x_label.config(text="Current x-val: " + str(x))
+		current_y_label.config(text="Current y-val: " + str(y))
 
 	window.after(5, Update_GUI)
 
@@ -75,6 +81,7 @@ def Update_GUI():
 def end_program():
 	key = input("Enter q to exit! \n")
 	if(key == 'q'):
+		DynamixelProtocol1AXorMXseries_Object.ExitProgram_Callback()
 		sys.exit()
 
 
@@ -85,9 +92,35 @@ def Display_GUI():
 	global start_btn
 	global current_x_label
 	global current_y_label
+	global TabControlObject
+	global Tab_DynamixelProtocol1AXorMXseries
+	global GUI_SETUP_DICT
 
 	window = tk.Tk()
 
+	TabControlObject = ttk.Notebook(window)
+
+	Tab_DynamixelProtocol1AXorMXseries = ttk.Frame(TabControlObject)
+	TabControlObject.add(Tab_DynamixelProtocol1AXorMXseries, text='   Dynamixel   ')
+	Tab_MainControls = ttk.Frame(TabControlObject)
+	TabControlObject.add(Tab_MainControls, text='   Main Controls   ')
+
+	Tab_MyPrint = ttk.Frame(TabControlObject)
+	TabControlObject.add(Tab_MyPrint, text='   MyPrint Terminal   ')
+
+	TabControlObject.pack(expand=1, fill="both")  # CANNOT MIX PACK AND GRID IN THE SAME FRAME/TAB, SO ALL .GRID'S MUST BE CONTAINED WITHIN THEIR OWN FRAME/TAB.
+
+	GUI_SETUP_DICT = dict([("USE_GUI_FLAG", 1),
+					("root", Tab_DynamixelProtocol1AXorMXseries),
+					("EnableInternal_MyPrint_Flag", 1),
+					("NumberOfPrintLines", 10),
+					("UseBorderAroundThisGuiObjectFlag", 0),
+					("GUI_ROW", 0),
+					("GUI_COLUMN", 0),
+					("GUI_PADX", 1),
+					("GUI_PADY", 10),
+					("GUI_ROWSPAN", 1),
+					("GUI_COLUMNSPAN", 1)])
 
 	x_label = tk.Label(window, text="Enter x value (in mm)")
 	x_label.pack()
@@ -110,7 +143,7 @@ def Display_GUI():
 	current_y_label = tk.Label(window, text="Current y-val: -")
 	current_y_label.pack()
 
-	window.after(5, Update_GUI)
+	window.after(10, Update_GUI)
 
 	window.mainloop()
 
@@ -119,11 +152,19 @@ if __name__ == "__main__":
 	end_program_thread = threading.Thread(target=end_program)
 	end_program_thread.start()
 
-	global DynamixelProtocol1AXorMXseries_Object
+	display_gui_thread = threading.Thread(target=Display_GUI)
+	display_gui_thread.start()
 
+	time.sleep(4) # wait for the GUI thread to run a little so that GUI_SETUP_DICT is defined
+
+	global Tab_DynamixelProtocol1AXorMXseries
+
+	global GUI_SETUP_DICT
 
 	global DynamixelProtocol1AXorMXseries_setup_dict
-	DynamixelProtocol1AXorMXseries_setup_dict = dict([("DesiredSerialNumber_USBtoSerialConverter", "FT3M9STOA"),  #Sangeet = FT3M9STOA
+
+	DynamixelProtocol1AXorMXseries_setup_dict = dict([("GUIparametersDict", GUI_SETUP_DICT),
+													("DesiredSerialNumber_USBtoSerialConverter", "FT3M9STOA"),  #Sangeet = FT3M9STOA
 													("NameToDisplay_UserSet", "My U2D2"),
 													("SerialBaudRate", 1000000),
 													("SerialTxBufferSize", 64),
@@ -145,15 +186,17 @@ if __name__ == "__main__":
 													#("CCWlimit_StartingValueList",  [1023.0, 1023.0])])
 
 	try:
-		DynamixelProtocol1AXorMXseries_Object = DynamixelProtocol1AXorMXseries_ReubenPython3Class(DynamixelProtocol1AXorMXseries_setup_dict)
 
+		global DynamixelProtocol1AXorMXseries_Object
+		DynamixelProtocol1AXorMXseries_Object = DynamixelProtocol1AXorMXseries_ReubenPython3Class(DynamixelProtocol1AXorMXseries_setup_dict)
+		print("Hiiiiiii")
+		DYNAMIXEL_OBJ_SUCCESSFULLY_CREATED = True
 	except:
 		exceptions = sys.exc_info()[0]
 		print("DynamixelProtocol1AXorMXseries_Object __init__: Exceptions: %s" % exceptions)
 		traceback.print_exc()
 
-	display_gui_thread = threading.Thread(target=Display_GUI)
-	display_gui_thread.start()
+
 
 
 
