@@ -4,7 +4,7 @@ import tkinter as tk
 import threading
 import traceback
 
-sys.path.append("C:/Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
+sys.path.append("C://Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
 #sys.path.append('../')
 
 import DynamixelProtocol1AXorMXseries_ReubenPython3Class
