@@ -1,3 +1,4 @@
+from logging import warn
 import sys
 import math
 import tkinter as tk
@@ -6,7 +7,7 @@ import traceback
 from tkinter import ttk
 import time
 
-sys.path.append("C://Users/Chaniya/Desktop/Brewer/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
+sys.path.append("C:/Users/sange/OneDrive/Desktop/DynamixelProtocol1AXorMXseries_ReubenPython3Class")
 #sys.path.append('../')
 
 from DynamixelProtocol1AXorMXseries_ReubenPython3Class import DynamixelProtocol1AXorMXseries_ReubenPython3Class
@@ -32,30 +33,55 @@ def onclick():
 	move_motor(x_request, y_request)
 
 
-def move_motor(x, y):
+def move_motor(x, y):# 90, 80
 	global DynamixelProtocol1AXorMXseries_Object
+	global warning_label
+	global last_angles_label
+	global debugging_label
 
 	#Calculate each angle
-	hypotenuse = math.sqrt(pow(x, 2) + pow(y, 2))
-	angle_a = math.atan(y/x)
-	angle_b = math.acos(((pow(hypotenuse,2)) + (pow(FIRST_ARM_LENGTH,2)) - (pow(SECOND_ARM_LENGTH,2)))/(2*hypotenuse*FIRST_ARM_LENGTH))
-
-	angle_first_motor = angle_a - angle_b # Assume that we are starting from the right most, 0 angle.
+	hypotenuse = math.sqrt(pow(x, 2) + pow(y, 2)) #sqrt(90^2 + 80^2)
+	try:
+		angle_a = math.atan2(y, x)
+		angle_b = math.acos(((pow(hypotenuse,2)) + (pow(FIRST_ARM_LENGTH,2)) - (pow(SECOND_ARM_LENGTH,2)))/(2*hypotenuse*FIRST_ARM_LENGTH))
+	except(ValueError):
+		warning_label.config(text="Invalid x,y coordinate: either out of arm range or too little for the arm range")
+		return
+	angle_first_motor_rad = angle_a - angle_b # Assume that we are starting from the right most, 0 angle.
 
 	angle_c = math.asin(hypotenuse * (math.sin(angle_b) / SECOND_ARM_LENGTH))
-	angle_second_motor = 180 - angle_c
+	angle_second_motor_rad = math.pi - angle_c
 
+	debugging_label.config(text=f"angle a: {angle_a * (180.0/math.pi)} \n angle b: {angle_b * (180.0/math.pi)} \n angle c: {angle_c * (180.0/math.pi)}")
+
+	angle_first_motor = angle_first_motor_rad * (180.0/math.pi)
+	angle_second_motor = angle_second_motor_rad * (180.0/math.pi)
+
+	last_angles_label.config(text=f"Last angle requested of first motor: {angle_first_motor} ; \n Last angle requested of second motor: {angle_second_motor}")
 	#NOTE: the starting position of the motors will be on the positive x-axis
-
+	
 	# NOTE: First both the motors will be in their 0 position. Then the first motor will turn counterclockwise by angle_first_motor, then the second motor will turn counterclockwise by angle_second_motor.
 
+	angle_first_motor+= 4.69 #"zero" angle for first motor.
+
 	#Re-zero each motor
-	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(0, 0, "deg")
-	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(0, 0, "deg")
+	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(0, 4.69, "deg")
+	time.sleep(1)
+	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(1, 0, "deg")
+
+	time.sleep(1)
+
+	if(angle_first_motor < 0):
+		angle_first_motor = 360 + angle_first_motor
+	if(angle_second_motor < 0):
+		angle_first_motor = 360 + angle_second_motor
 
 	#Set motors to calculated angle
 	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(0, angle_first_motor, "deg")
-	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(0, angle_second_motor, "deg")
+	time.sleep(1)
+	DynamixelProtocol1AXorMXseries_Object.SetPosition_FROM_EXTERNAL_PROGRAM(1, angle_second_motor, "deg")
+
+	time.sleep(1)
 
 def Update_GUI():
 	global current_x_label
@@ -95,6 +121,9 @@ def Display_GUI():
 	global TabControlObject
 	global Tab_DynamixelProtocol1AXorMXseries
 	global GUI_SETUP_DICT
+	global warning_label
+	global last_angles_label
+	global debugging_label
 
 	window = tk.Tk()
 
@@ -142,6 +171,15 @@ def Display_GUI():
 
 	current_y_label = tk.Label(window, text="Current y-val: -")
 	current_y_label.pack()
+
+	warning_label = tk.Label(window, text="No warnings as of now")
+	warning_label.pack()
+
+	last_angles_label = tk.Label(window, text="Last angle requested of first motor: - ; \n Last angle requested of second motor: -")
+	last_angles_label.pack()
+
+	debugging_label = tk.Label(window, text="angle a: - \n angle b: - \n angle_first_motor: - \n angle c: -")
+	debugging_label.pack()
 
 	window.after(10, Update_GUI)
 
